@@ -1,75 +1,38 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const bcrypt = require('bcryptjs');
 const User = require('./models/User');
-const GymClass = require('./models/GymClass');
 
 dotenv.config();
 
-const seedData = async () => {
+const createAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
-    await User.deleteMany({});
-    await GymClass.deleteMany({});
+    const { ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+    if (!ADMIN_NAME || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      throw new Error('Set ADMIN_NAME, ADMIN_EMAIL, and ADMIN_PASSWORD before running the seed command.');
+    }
 
-    const admin = await User.create({
-      name: 'Gym Admin',
-      email: 'admin@gymbooker.com',
-      password: 'Admin@123',
+    const existingAdmin = await User.findOne({ email: ADMIN_EMAIL.toLowerCase() });
+    if (existingAdmin) {
+      console.log('An account with ADMIN_EMAIL already exists; no changes were made.');
+      return;
+    }
+
+    await User.create({
+      name: ADMIN_NAME,
+      email: ADMIN_EMAIL.toLowerCase(),
+      password: ADMIN_PASSWORD,
       role: 'admin',
     });
 
-    await User.create({
-      name: 'Demo Member',
-      email: 'member@gymbooker.com',
-      password: 'Member@123',
-      role: 'member',
-    });
-
-    await GymClass.insertMany([
-      {
-        title: 'Yoga',
-        description: 'A calming flow class for mobility and flexibility.',
-        category: 'Flexibility',
-        trainer: 'Anjali',
-        date: '2026-09-29',
-        startTime: '6:00 PM',
-        endTime: '7:00 PM',
-        location: 'Studio A',
-        capacity: 20,
-      },
-      {
-        title: 'Zumba',
-        description: 'Energetic dance cardio with motivating music.',
-        category: 'Cardio',
-        trainer: 'Marcus',
-        date: '2026-09-30',
-        startTime: '7:00 PM',
-        endTime: '8:00 PM',
-        location: 'Dance Studio',
-        capacity: 25,
-      },
-      {
-        title: 'Strength Training',
-        description: 'Functional strength training with weights and resistance.',
-        category: 'Strength',
-        trainer: 'Rachel',
-        date: '2026-10-01',
-        startTime: '8:00 AM',
-        endTime: '9:00 AM',
-        location: 'Weights Area',
-        capacity: 16,
-      },
-    ]);
-
-    console.log('Seed data created successfully');
-    console.log('Admin login:', admin.email, 'Password: Admin@123');
-    process.exit(0);
+    console.log(`Admin account created for ${ADMIN_EMAIL.toLowerCase()}.`);
   } catch (error) {
-    console.error('Error seeding data:', error.message);
-    process.exit(1);
+    console.error('Unable to create admin account:', error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
   }
 };
 
-seedData();
+createAdmin();

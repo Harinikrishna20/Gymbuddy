@@ -1,22 +1,29 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ClassCard from '../components/ClassCard';
 import { useAuth } from '../context/AuthContext';
 
+const activityCategories = [
+  'Fitness', 'Yoga', 'Dance', 'Badminton', 'Cricket', 'Football',
+  'Basketball', 'Swimming', 'Zumba', 'Meditation', 'Other',
+];
+
 export default function Classes() {
   const navigate = useNavigate();
-  const { classes, classesLoading, classesError, refreshClasses } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, classes, classesLoading, classesError, refreshClasses } = useAuth();
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
+  const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [trainer, setTrainer] = useState('All');
   const [date, setDate] = useState('');
 
-  const uniqueCategories = ['All', ...new Set(classes.map((item) => item.category))];
+  const uniqueCategories = ['All', ...new Set([...activityCategories, ...classes.map((item) => item.category)])];
   const uniqueTrainers = ['All', ...new Set(classes.map((item) => item.trainer))];
 
   const filteredClasses = useMemo(() => {
     return classes.filter((item) => {
-      const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase());
+      const searchableText = `${item.title} ${item.description} ${item.trainer} ${item.category}`.toLowerCase();
+      const matchesSearch = searchableText.includes(search.toLowerCase());
       const matchesCategory = category === 'All' || item.category === category;
       const matchesTrainer = trainer === 'All' || item.trainer === trainer;
       const matchesDate = !date || item.date === date;
@@ -32,8 +39,8 @@ export default function Classes() {
   return (
     <div className="container page-shell">
       <div className="section-heading">
-        <p className="eyebrow">Find your perfect fit</p>
-        <h1>Available Gym Classes</h1>
+        <p className="eyebrow">Sports, skills, and movement</p>
+        <h1>Explore Activities</h1>
       </div>
 
       <div className="filter-bar">
@@ -75,11 +82,16 @@ export default function Classes() {
           <div className="empty-state" role="status">Loading classes...</div>
         ) : filteredClasses.length > 0 ? (
           filteredClasses.map((item) => (
-            <ClassCard key={item.id} classItem={item} showBookButton onBook={handleBook} />
+            <ClassCard
+              key={item.id}
+              classItem={item}
+              showBookButton={user?.role !== 'trainer' && user?.role !== 'admin'}
+              onBook={handleBook}
+            />
           ))
         ) : (
           <div className="empty-state">
-            {classes.length === 0 ? 'No gym classes are currently scheduled.' : 'No classes match your current filters.'}
+            {classes.length === 0 ? 'No activities are scheduled yet.' : 'No classes match your current filters.'}
           </div>
         )}
       </div>

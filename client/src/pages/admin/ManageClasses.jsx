@@ -1,10 +1,16 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+
+const activityCategories = [
+  'Fitness', 'Yoga', 'Dance', 'Badminton', 'Cricket', 'Football',
+  'Basketball', 'Swimming', 'Zumba', 'Meditation', 'Other',
+];
 
 const blankClass = {
   title: '',
   description: '',
-  category: '',
+  category: 'Fitness',
   trainer: '',
   date: '',
   startTime: '',
@@ -14,7 +20,23 @@ const blankClass = {
 };
 
 export default function ManageClasses() {
-  const { classes, classesLoading, classesError, refreshClasses, addClass, updateClass, deleteClass } = useAuth();
+  const {
+    user,
+    classes,
+    myClasses,
+    classesLoading,
+    classesError,
+    dataLoading,
+    dataError,
+    refreshClasses,
+    addClass,
+    updateClass,
+    deleteClass,
+  } = useAuth();
+  const isTrainer = user?.role === 'trainer';
+  const managedClasses = isTrainer ? myClasses : classes;
+  const pageLoading = isTrainer ? dataLoading : classesLoading;
+  const pageError = isTrainer ? dataError : classesError;
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(blankClass);
@@ -76,18 +98,18 @@ export default function ManageClasses() {
     <div className="container page-shell">
       <div className="section-heading split">
         <div>
-          <p className="eyebrow">Admin tools</p>
-          <h1>Manage Classes</h1>
+          <p className="eyebrow">{isTrainer ? 'Trainer tools' : 'Platform administration'}</p>
+          <h1>{isTrainer ? 'My Classes' : 'Manage Classes'}</h1>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => { setEditingId(null); setFormData(blankClass); setFormError(''); setShowForm(true); }}>
-          + Add New Class
+          Create Class
         </button>
       </div>
 
-      {classesError && (
+      {pageError && (
         <p className="error-text" role="alert">
-          {classesError}{' '}
-          <button type="button" className="text-link" onClick={refreshClasses}>Retry</button>
+          {pageError}{' '}
+          {!isTrainer && <button type="button" className="text-link" onClick={refreshClasses}>Retry</button>}
         </p>
       )}
       {formError && <p className="error-text" role="alert">{formError}</p>}
@@ -104,13 +126,21 @@ export default function ManageClasses() {
               <input name="description" value={formData.description} onChange={handleInputChange} required />
             </label>
             <label>
-              <span>Category</span>
-              <input name="category" value={formData.category} onChange={handleInputChange} required />
+              <span>Activity</span>
+              <select name="category" value={formData.category} onChange={handleInputChange} required>
+                {[...new Set([...activityCategories, formData.category])].map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
             </label>
-            <label>
-              <span>Trainer</span>
-              <input name="trainer" value={formData.trainer} onChange={handleInputChange} required />
-            </label>
+            {isTrainer ? (
+              <label><span>Trainer</span><input value={user.fullName} readOnly /></label>
+            ) : (
+              <label>
+                <span>Trainer name</span>
+                <input name="trainer" value={formData.trainer} onChange={handleInputChange} required />
+              </label>
+            )}
             <label>
               <span>Date</span>
               <input type="date" name="date" value={formData.date} onChange={handleInputChange} required />
@@ -149,14 +179,16 @@ export default function ManageClasses() {
               <th>Date</th>
               <th>Time</th>
               <th>Capacity</th>
-              <th>Bookings</th>
+              <th>Booked</th>
+              <th>Seats available</th>
+              {isTrainer && <th>Roster</th>}
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {classesLoading ? (
-              <tr><td colSpan="7">Loading classes...</td></tr>
-            ) : classes.map((classItem) => (
+            {pageLoading ? (
+              <tr><td colSpan={isTrainer ? 9 : 8}>Loading classes...</td></tr>
+            ) : managedClasses.map((classItem) => (
               <tr key={classItem.id}>
                 <td>{classItem.title}</td>
                 <td>{classItem.trainer}</td>
@@ -164,6 +196,8 @@ export default function ManageClasses() {
                 <td>{classItem.startTime} - {classItem.endTime}</td>
                 <td>{classItem.capacity}</td>
                 <td>{classItem.bookedSeats}</td>
+                <td>{classItem.availableSeats}</td>
+                {isTrainer && <td><Link className="text-link" to={`/trainer/classes/${classItem.id}/learners`}>View learners</Link></td>}
                 <td>
                   <div className="action-group">
                     <button type="button" className="btn btn-small btn-secondary" onClick={() => handleEdit(classItem)}>Edit</button>
@@ -172,8 +206,8 @@ export default function ManageClasses() {
                 </td>
               </tr>
             ))}
-            {!classesLoading && classes.length === 0 && (
-              <tr><td colSpan="7">No classes have been added.</td></tr>
+            {!pageLoading && managedClasses.length === 0 && (
+              <tr><td colSpan={isTrainer ? 9 : 8}>{isTrainer ? 'You have not created any classes yet.' : 'No classes have been added.'}</td></tr>
             )}
           </tbody>
         </table>

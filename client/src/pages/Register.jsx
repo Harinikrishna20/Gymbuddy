@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    role: searchParams.get('role') === 'trainer' ? 'trainer' : 'learner',
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -58,19 +60,21 @@ export default function Register() {
       return;
     }
 
-    const result = await register(formData.fullName, formData.email, formData.password);
+    const result = await register(formData.fullName, formData.email, formData.password, formData.role);
 
     if (!result.success) {
       setServerError(result.message);
       return;
     }
 
-    navigate(result.user.role === 'admin' ? '/admin' : '/');
+    const dashboardPaths = { learner: '/learner', trainer: '/trainer', admin: '/admin' };
+    navigate(dashboardPaths[result.user.role] || '/learner');
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <p className="eyebrow">Join the movement</p>
         <h1>Create Account</h1>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -84,6 +88,14 @@ export default function Register() {
               placeholder="John Smith"
             />
             {errors.fullName && <small>{errors.fullName}</small>}
+          </label>
+
+          <label>
+            <span>Account type</span>
+            <select name="role" value={formData.role} onChange={handleChange}>
+              <option value="learner">Learner</option>
+              <option value="trainer">Trainer</option>
+            </select>
           </label>
 
           <label>

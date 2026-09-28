@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import { formatDateLabel } from '../utils/date';
 
 export default function ClassDetails() {
   const { id } = useParams();
@@ -37,8 +38,9 @@ export default function ClassDetails() {
     return <div className="container page-shell">Class not found.</div>;
   }
 
-  const availableSeats = classItem.capacity - classItem.bookedSeats;
+  const availableSeats = classItem.availableSeats ?? classItem.capacity - classItem.bookedSeats;
   const isFull = availableSeats <= 0;
+  const canBook = user?.role === 'learner';
 
   const handleBook = () => {
     if (!user) {
@@ -80,18 +82,20 @@ export default function ClassDetails() {
           <ul>
             <li><strong>Trainer:</strong> {classItem.trainer}</li>
             <li><strong>Category:</strong> {classItem.category}</li>
-            <li><strong>Date:</strong> {classItem.date}</li>
+            <li><strong>Date:</strong> {formatDateLabel(classItem.date)}</li>
             <li><strong>Start Time:</strong> {classItem.startTime}</li>
             <li><strong>End Time:</strong> {classItem.endTime}</li>
             <li><strong>Location:</strong> {classItem.location}</li>
             <li><strong>Capacity:</strong> {classItem.capacity}</li>
-            <li><strong>Available Seats:</strong> {availableSeats}</li>
+            <li><strong>Available Seats:</strong> {availableSeats} / {classItem.capacity}</li>
           </ul>
         </div>
 
         <div className="details-action-box">
           {!user ? (
-            <Button to="/login">Book This Class</Button>
+            <Button to="/login">Login to Book</Button>
+          ) : !canBook ? (
+            <p className="empty-text">Bookings are available to learner accounts.</p>
           ) : booked ? (
             <button type="button" className="btn btn-secondary disabled" disabled>
               Already Booked
@@ -113,7 +117,7 @@ export default function ClassDetails() {
           <div className="modal-card">
             <h2>Confirm Booking</h2>
             <p className="modal-class-name">{classItem.title}</p>
-            <p>{classItem.date}</p>
+            <p>{formatDateLabel(classItem.date)}</p>
             <p>{classItem.startTime} - {classItem.endTime}</p>
             <p>Trainer: {classItem.trainer}</p>
             <p>Location: {classItem.location}</p>

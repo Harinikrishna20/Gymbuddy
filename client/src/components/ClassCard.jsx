@@ -26,7 +26,7 @@ export default function ClassCard({ classItem, showBookButton = false, onBook })
 
           {showBookButton && !isFull && onBook && (
             <button type="button" className="btn btn-primary" onClick={() => onBook(classItem)}>
-              Book
+              Book Now
             </button>
           )}
         </div>

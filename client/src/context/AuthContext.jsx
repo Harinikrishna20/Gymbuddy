@@ -8,7 +8,7 @@ const normalizeUser = (user) => ({
   id: user.id || user._id,
   fullName: user.name || user.fullName,
   email: user.email,
-  role: user.role,
+  role: user.role === 'member' ? 'learner' : user.role,
 });
 
 const normalizeClass = (classItem) => ({
@@ -52,6 +52,23 @@ const fetchUserData = async (role) => {
       bookings: [],
       adminBookings: bookingsResponse.data.data,
       dashboardStats: dashboardResponse.data.data,
+      myClasses: [],
+      trainerStats: null,
+    };
+  }
+
+  if (role === 'trainer') {
+    const [classesResponse, dashboardResponse] = await Promise.all([
+      api.get('/classes/mine'),
+      api.get('/trainer/dashboard'),
+    ]);
+
+    return {
+      bookings: [],
+      adminBookings: [],
+      dashboardStats: null,
+      myClasses: classesResponse.data.data.map(normalizeClass),
+      trainerStats: dashboardResponse.data.data,
     };
   }
 
@@ -60,6 +77,8 @@ const fetchUserData = async (role) => {
     bookings: response.data.data.map(normalizeBooking),
     adminBookings: [],
     dashboardStats: null,
+    myClasses: [],
+    trainerStats: null,
   };
 };
 
@@ -70,6 +89,8 @@ export function AuthProvider({ children }) {
   const [bookings, setBookings] = useState([]);
   const [adminBookings, setAdminBookings] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
+  const [myClasses, setMyClasses] = useState([]);
+  const [trainerStats, setTrainerStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
   const [user, setUser] = useState(null);
@@ -97,6 +118,8 @@ export function AuthProvider({ children }) {
       setBookings(result.bookings);
       setAdminBookings(result.adminBookings);
       setDashboardStats(result.dashboardStats);
+      setMyClasses(result.myClasses);
+      setTrainerStats(result.trainerStats);
     } catch (error) {
       setDataError(getErrorMessage(error, 'Unable to load account data from the server.'));
     } finally {
@@ -129,6 +152,8 @@ export function AuthProvider({ children }) {
             setBookings(userData.bookings);
             setAdminBookings(userData.adminBookings);
             setDashboardStats(userData.dashboardStats);
+            setMyClasses(userData.myClasses);
+            setTrainerStats(userData.trainerStats);
           }
         } catch (error) {
           if (error.response?.status === 401) localStorage.removeItem(SESSION_TOKEN_KEY);
@@ -158,9 +183,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const register = async (fullName, email, password) => {
+  const register = async (fullName, email, password, role = 'learner') => {
     try {
-      const response = await api.post('/auth/register', { name: fullName, email, password });
+      const response = await api.post('/auth/register', { name: fullName, email, password, role });
       const sessionUser = normalizeUser(response.data.data.user);
       localStorage.setItem(SESSION_TOKEN_KEY, response.data.data.token);
       setUser(sessionUser);
@@ -173,6 +198,7 @@ export function AuthProvider({ children }) {
 
   const addBooking = async (classId) => {
     if (!user) return { success: false, message: 'Please log in to book a class.' };
+    if (user.role !== 'learner') return { success: false, message: 'Only learners can book classes.' };
 
     try {
       await api.post('/bookings', { gymClassId: classId });
@@ -196,7 +222,7 @@ export function AuthProvider({ children }) {
   const addClass = async (newClass) => {
     try {
       await api.post('/classes', newClass);
-      await refreshClasses();
+      await (user.role === 'trainer' ? refreshUserData(user.role) : refreshClasses());
       return { success: true };
     } catch (error) {
       return { success: false, message: getErrorMessage(error, 'Unable to create this class.') };
@@ -206,7 +232,7 @@ export function AuthProvider({ children }) {
   const updateClass = async (classId, updatedClass) => {
     try {
       await api.put(`/classes/${classId}`, updatedClass);
-      await refreshClasses();
+      await (user.role === 'trainer' ? refreshUserData(user.role) : refreshClasses());
       return { success: true };
     } catch (error) {
       return { success: false, message: getErrorMessage(error, 'Unable to update this class.') };
@@ -216,7 +242,7 @@ export function AuthProvider({ children }) {
   const deleteClass = async (classId) => {
     try {
       await api.delete(`/classes/${classId}`);
-      await refreshClasses();
+      await (user.role === 'trainer' ? refreshUserData(user.role) : refreshClasses());
       return { success: true };
     } catch (error) {
       return { success: false, message: getErrorMessage(error, 'Unable to delete this class.') };
@@ -229,6 +255,8 @@ export function AuthProvider({ children }) {
     setBookings([]);
     setAdminBookings([]);
     setDashboardStats(null);
+    setMyClasses([]);
+    setTrainerStats(null);
   };
 
   const value = {
@@ -239,6 +267,8 @@ export function AuthProvider({ children }) {
     bookings,
     adminBookings,
     dashboardStats,
+    myClasses,
+    trainerStats,
     dataLoading,
     dataError,
     authLoading,

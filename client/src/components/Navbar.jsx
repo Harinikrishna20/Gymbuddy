@@ -14,7 +14,7 @@ export default function Navbar() {
     if (!isLoggedIn) {
       return [
         { to: '/', label: 'Home' },
-        { to: '/classes', label: 'Classes' },
+        { to: '/classes', label: 'Explore Activities' },
         { to: '/login', label: 'Login' },
         { to: '/register', label: 'Register' },
       ];
@@ -23,15 +23,25 @@ export default function Navbar() {
     if (isAdmin) {
       return [
         { to: '/admin', label: 'Dashboard' },
+        { to: '/admin/users', label: 'Users' },
         { to: '/admin/classes', label: 'Classes' },
         { to: '/admin/bookings', label: 'Bookings' },
         { to: '/profile', label: 'Profile' },
       ];
     }
 
+    if (user.role === 'trainer') {
+      return [
+        { to: '/trainer', label: 'Dashboard' },
+        { to: '/trainer/classes', label: 'My Classes' },
+        { to: '/classes', label: 'Explore Activities' },
+        { to: '/profile', label: 'Profile' },
+      ];
+    }
+
     return [
-      { to: '/', label: 'Home' },
-      { to: '/classes', label: 'Classes' },
+      { to: '/learner', label: 'Dashboard' },
+      { to: '/classes', label: 'Explore Activities' },
       { to: '/my-bookings', label: 'My Bookings' },
       { to: '/profile', label: 'Profile' },
     ];
@@ -42,8 +52,8 @@ export default function Navbar() {
   return (
     <header className="site-header">
       <nav className="navbar container">
-        <Link to="/" className="brand" aria-label="Gym Booker home">
-          GYM BOOKER
+        <Link to="/" className="brand" aria-label="FitSphere home">
+          FitSphere
         </Link>
 
         <div className="nav-links">

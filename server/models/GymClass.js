@@ -22,6 +22,12 @@ const gymClassSchema = new mongoose.Schema(
       required: [true, 'Trainer is required'],
       trim: true,
     },
+    trainerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
     date: {
       type: String,
       required: [true, 'Date is required'],
@@ -43,6 +49,11 @@ const gymClassSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Capacity is required'],
       min: [1, 'Capacity must be at least 1'],
+    },
+    bookingRevision: {
+      type: Number,
+      default: 0,
+      select: false,
     },
   },
   {

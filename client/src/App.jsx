@@ -13,6 +13,10 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageBookings from './pages/admin/ManageBookings';
 import ManageClasses from './pages/admin/ManageClasses';
+import ManageUsers from './pages/admin/ManageUsers';
+import ClassLearners from './pages/trainer/ClassLearners';
+import TrainerDashboard from './pages/trainer/TrainerDashboard';
+import LearnerDashboard from './pages/learner/LearnerDashboard';
 
 function App() {
   return (
@@ -27,11 +31,19 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="/classes/:id" element={<ClassDetails />} />
+            <Route
+              path="/learner"
+              element={
+                <ProtectedRoute allowedRoles={['learner']}>
+                  <LearnerDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/my-bookings"
               element={
-                <ProtectedRoute allowedRoles={['member']}>
+                <ProtectedRoute allowedRoles={['learner']}>
                   <MyBookings />
                 </ProtectedRoute>
               }
@@ -40,7 +52,7 @@ function App() {
             <Route
               path="/profile"
               element={
-                <ProtectedRoute allowedRoles={['member', 'admin']}>
+                <ProtectedRoute allowedRoles={['learner', 'trainer', 'admin']}>
                   <Profile />
                 </ProtectedRoute>
               }
@@ -69,6 +81,42 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <ManageBookings />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ManageUsers />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/trainer"
+              element={
+                <ProtectedRoute allowedRoles={['trainer']}>
+                  <TrainerDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/trainer/classes"
+              element={
+                <ProtectedRoute allowedRoles={['trainer']}>
+                  <ManageClasses />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/trainer/classes/:classId/learners"
+              element={
+                <ProtectedRoute allowedRoles={['trainer']}>
+                  <ClassLearners />
                 </ProtectedRoute>
               }
             />

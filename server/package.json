@@ -1,7 +1,7 @@
 {
-  "name": "gymbooker-server",
+  "name": "fitsphere-server",
   "version": "1.0.0",
-  "description": "Gym Class Booker backend API",
+  "description": "FitSphere sports and activity booking API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

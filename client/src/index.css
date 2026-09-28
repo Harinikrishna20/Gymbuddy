@@ -1,17 +1,18 @@
 :root {
-  --bg: #f4f7f6;
+  --bg: #f5f7f0;
   --surface: #ffffff;
-  --surface-soft: #eef8f5;
-  --primary: #1dbf73;
-  --primary-dark: #14955d;
-  --secondary: #0f172a;
-  --muted: #5a6877;
-  --border: #dfe7e5;
+  --surface-soft: #edf4df;
+  --primary: #378344;
+  --primary-dark: #286535;
+  --secondary: #142721;
+  --muted: #59675f;
+  --border: #dce5d7;
+  --accent-warm: #ed805f;
   --warning: #f59e0b;
   --danger: #dc2626;
   --success: #15803d;
-  --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-  --radius: 18px;
+  --shadow: 0 18px 45px rgba(20, 39, 33, 0.08);
+  --radius: 12px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -31,7 +32,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f6f8fb 0%, #edf8f2 100%);
+  background: linear-gradient(180deg, #fbfcf8 0%, #eef3e8 100%);
   color: var(--secondary);
 }
 
@@ -60,13 +61,13 @@ h1, h2, h3, h4, p {
 }
 
 h1 {
-  font-size: clamp(2.2rem, 4vw, 4rem);
+  font-size: 3rem;
   line-height: 1.1;
   margin-bottom: 0.75rem;
 }
 
 h2 {
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-size: 2rem;
   margin-bottom: 0.5rem;
 }
 
@@ -86,7 +87,7 @@ h2 {
 }
 
 .site-header {
-  background: rgba(15, 23, 42, 0.96);
+  background: rgba(20, 39, 33, 0.97);
   color: white;
   position: sticky;
   top: 0;
@@ -104,9 +105,10 @@ h2 {
 
 .brand {
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   font-size: 1.2rem;
   color: white;
+  text-transform: uppercase;
 }
 
 .nav-links {
@@ -160,31 +162,60 @@ h2 {
 
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
   font-size: 0.75rem;
   color: var(--primary-dark);
   font-weight: 700;
 }
 
 .hero-section {
-  padding: 70px 0 30px;
+  padding: 28px 0 20px;
 }
 
 .hero-grid {
+  position: relative;
   display: grid;
-  grid-template-columns: 1.3fr 0.7fr;
+  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr);
   align-items: center;
   gap: 32px;
-  background: linear-gradient(135deg, #0f172a 0%, #1c2b42 100%);
-  border-radius: 28px;
-  padding: 48px;
+  min-height: 520px;
+  overflow: hidden;
+  isolation: isolate;
+  background: #142721;
+  border-radius: 10px;
+  padding: 58px;
   color: white;
-  box-shadow: var(--shadow);
+  box-shadow: 0 22px 55px rgba(20, 39, 33, 0.18);
+}
+
+.hero-image {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.hero-grid::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(12, 29, 24, 0.92) 0%, rgba(12, 29, 24, 0.72) 48%, rgba(12, 29, 24, 0.28) 100%);
 }
 
 .hero-copy p,
 .hero-copy h1 {
   color: white;
+}
+
+.hero-copy h1 {
+  max-width: 720px;
+  font-size: 4.25rem;
+  line-height: 1.02;
+  animation: hero-enter 650ms ease-out both;
 }
 
 .hero-description {
@@ -203,12 +234,13 @@ h2 {
 .hero-panel {
   display: grid;
   gap: 18px;
+  animation: hero-enter 750ms ease-out both;
 }
 
 .hero-stat {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
+  background: rgba(20, 39, 33, 0.56);
+  border: 1px solid rgba(255,255,255,0.26);
+  border-radius: 8px;
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
@@ -216,7 +248,7 @@ h2 {
 }
 
 .hero-stat strong {
-  font-size: clamp(1.8rem, 2vw, 2.3rem);
+  font-size: 2rem;
 }
 
 .hero-stat span {
@@ -232,6 +264,40 @@ h2 {
 
 .feature-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.activity-tile {
+  min-height: 112px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 8px;
+  background: var(--surface);
+  font-weight: 700;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.activity-tile:nth-child(3n + 2) { border-top-color: var(--accent-warm); }
+.activity-tile:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+.activity-icon {
+  min-width: 34px;
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  font-size: 1.45rem;
 }
 
 .class-grid {
@@ -369,7 +435,9 @@ h2 {
 .filter-bar input,
 .filter-bar select,
 .auth-form input,
+.auth-form select,
 .admin-form input,
+.admin-form select,
 .admin-form textarea {
   width: 100%;
   padding: 0.8rem 0.9rem;
@@ -432,6 +500,13 @@ h2 {
 .demo-box ul {
   margin: 8px 0 0 18px;
   padding: 0;
+}
+
+.dashboard-section { margin-top: 36px; }
+
+@keyframes hero-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .details-page {
@@ -559,6 +634,10 @@ h2 {
 
 .stats-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-dashboard-stats {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .stat-card {
@@ -703,6 +782,10 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .activity-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hero-grid { min-height: 560px; }
+  .hero-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
   .filter-bar {
     grid-template-columns: 1fr 1fr;
   }
@@ -727,13 +810,24 @@ h2 {
 }
 
 @media (max-width: 560px) {
+  h1 { font-size: 2.4rem; }
+  h2 { font-size: 1.75rem; }
+
   .filter-bar {
     grid-template-columns: 1fr;
   }
 
   .hero-grid {
-    padding: 28px 20px;
+    min-height: 650px;
+    align-content: center;
+    gap: 28px;
+    padding: 32px 22px;
   }
+
+  .hero-copy h1 { font-size: 2.7rem; }
+  .hero-panel { grid-template-columns: 1fr; }
+  .hero-stat { padding: 14px 16px; }
+  .activity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .btn {
     width: 100%;
@@ -745,5 +839,9 @@ h2 {
   .form-actions {
     width: 100%;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 

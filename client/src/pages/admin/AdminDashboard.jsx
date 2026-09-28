@@ -7,10 +7,11 @@ export default function AdminDashboard() {
   const todaysClasses = classes.filter((classItem) => classItem.date === today);
 
   const summaryCards = [
-    { label: 'Total Members', value: dashboardStats?.totalMembers },
+    { label: 'Total Users', value: dashboardStats?.totalUsers },
+    { label: 'Trainers', value: dashboardStats?.totalTrainers },
+    { label: 'Learners', value: dashboardStats?.totalLearners },
     { label: 'Total Classes', value: dashboardStats?.totalClasses },
     { label: 'Total Bookings', value: dashboardStats?.totalBookings },
-    { label: 'Upcoming Classes', value: dashboardStats?.upcomingClasses },
   ];
   return (
     <div className="container page-shell">
@@ -19,7 +20,7 @@ export default function AdminDashboard() {
         <h1>Dashboard</h1>
       </div>
 
-      <div className="stats-grid">
+      <div className="stats-grid admin-dashboard-stats">
         {summaryCards.map((card) => (
           <div key={card.label} className="stat-card">
             <span>{card.label}</span>
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Member</th>
+                <th>Learner</th>
                 <th>Class</th>
                 <th>Date</th>
                 <th>Status</th>
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
             <tbody>
               {adminBookings.slice(0, 4).map((booking) => (
                   <tr key={booking.id}>
-                    <td>{booking.memberName}</td>
+                    <td>{booking.learnerName}</td>
                     <td>{booking.className}</td>
                     <td>{formatDateLabel(booking.date)}</td>
                     <td><span className="status-tag">{booking.status}</span></td>

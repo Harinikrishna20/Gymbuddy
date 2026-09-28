@@ -4,7 +4,7 @@ import BookingCard from '../components/BookingCard';
 import { useAuth } from '../context/AuthContext';
 
 export default function MyBookings() {
-  const { user, bookings, classes, dataLoading, dataError, refreshUserData, cancelBooking } = useAuth();
+  const { user, bookings, classes, dataLoading, dataError, cancelBooking } = useAuth();
   const [actionError, setActionError] = useState('');
 
   const userBookings = useMemo(

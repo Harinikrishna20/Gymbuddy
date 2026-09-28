@@ -15,7 +15,7 @@ export default function ManageBookings() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Member Name</th>
+              <th>Learner Name</th>
               <th>Email</th>
               <th>Class</th>
               <th>Trainer</th>
@@ -27,7 +27,7 @@ export default function ManageBookings() {
           <tbody>
             {adminBookings.map((booking) => (
                 <tr key={booking.id}>
-                  <td>{booking.memberName}</td>
+                  <td>{booking.learnerName}</td>
                   <td>{booking.email}</td>
                   <td>{booking.className}</td>
                   <td>{booking.trainer}</td>

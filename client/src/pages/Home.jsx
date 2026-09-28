@@ -2,28 +2,24 @@ import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 import ClassCard from '../components/ClassCard';
 import { useAuth } from '../context/AuthContext';
+import heroImage from '../assets/hero.png';
 
-const featureList = [
-  {
-    title: 'Easy Class Booking',
-    text: 'Reserve your preferred class in just a few clicks and avoid last-minute hassle.',
-  },
-  {
-    title: 'Experienced Trainers',
-    text: 'Train with skilled professionals who guide every step of your fitness journey.',
-  },
-  {
-    title: 'Flexible Schedules',
-    text: 'Choose sessions that fit your routine, from early morning to evening workouts.',
-  },
-  {
-    title: 'Track Your Bookings',
-    text: 'Stay on top of your schedule and keep your training routine consistent.',
-  },
+const activityCategories = [
+  { name: 'Fitness', icon: '🏋️' },
+  { name: 'Yoga', icon: '🧘' },
+  { name: 'Dance', icon: '💃' },
+  { name: 'Badminton', icon: '🏸' },
+  { name: 'Cricket', icon: '🏏' },
+  { name: 'Football', icon: '⚽' },
+  { name: 'Basketball', icon: '🏀' },
+  { name: 'Swimming', icon: '🏊' },
+  { name: 'Zumba', icon: '🎵' },
+  { name: 'Meditation', icon: '🧘‍♀️' },
+  { name: 'Other', icon: '✦' },
 ];
 
 export default function Home() {
-  const { classes, classesLoading, classesError, refreshClasses } = useAuth();
+  const { classes, classesLoading, classesError, refreshClasses, user } = useAuth();
   const featuredClasses = classes.slice(0, 6);
   const openClasses = classes.filter((item) => item.availableSeats > 0).length;
   const availableSeats = classes.reduce((total, item) => total + item.availableSeats, 0);
@@ -33,47 +29,52 @@ export default function Home() {
     <div className="page-shell">
       <section className="hero-section">
         <div className="container hero-grid">
+          <img className="hero-image" src={heroImage} alt="" />
           <div className="hero-copy">
-            <p className="eyebrow">Your fitness, your time</p>
-            <h1>Book Your Workout. Stay Consistent.</h1>
+            <p className="eyebrow">Move with FitSphere</p>
+            <h1>Discover. Learn.<br />Play. Stay Fit.</h1>
             <p className="hero-description">
-              Discover gym classes, choose your preferred time, and reserve your spot with ease.
+              Find and book sports, fitness, and activity classes near you.
             </p>
             <div className="hero-actions">
-              <Button to="/classes">Explore Classes</Button>
-              <Button to="/register" variant="secondary">Join Now</Button>
+              <Button to="/classes">Explore Activities</Button>
+              {user?.role === 'trainer' ? (
+                <Button to="/trainer/classes" variant="secondary">Create a Class</Button>
+              ) : user?.role !== 'admin' ? (
+                <Button to="/register?role=trainer" variant="secondary">Become a Trainer</Button>
+              ) : null}
             </div>
           </div>
 
           <div className="hero-panel">
             <div className="hero-stat">
               <strong>{metricValue(classes.length)}</strong>
-              <span>Scheduled Classes</span>
+              <span>Live Classes</span>
             </div>
             <div className="hero-stat">
               <strong>{metricValue(openClasses)}</strong>
-              <span>Classes With Open Seats</span>
+              <span>Open Activities</span>
             </div>
             <div className="hero-stat">
               <strong>{metricValue(availableSeats)}</strong>
-              <span>Available Seats</span>
+              <span>Seats Available</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="container section-block">
+      <section className="container section-block activity-section">
         <div className="section-heading">
-          <p className="eyebrow">Why members love us</p>
-          <h2>Built for a smoother gym routine</h2>
+          <p className="eyebrow">Choose your kind of movement</p>
+          <h2>Explore activities</h2>
         </div>
 
-        <div className="feature-grid">
-          {featureList.map((feature) => (
-            <div key={feature.title} className="feature-card">
-              <h3>{feature.title}</h3>
-              <p>{feature.text}</p>
-            </div>
+        <div className="activity-grid">
+          {activityCategories.map((activity) => (
+            <Link key={activity.name} to={`/classes?category=${encodeURIComponent(activity.name)}`} className="activity-tile">
+              <span className="activity-icon" aria-hidden="true">{activity.icon}</span>
+              <span>{activity.name}</span>
+            </Link>
           ))}
         </div>
       </section>
@@ -81,7 +82,7 @@ export default function Home() {
       <section className="container section-block">
         <div className="section-heading split">
           <div>
-            <p className="eyebrow">Popular classes</p>
+            <p className="eyebrow">Classes from real trainers</p>
             <h2>Find your next session</h2>
           </div>
           <Link to="/classes" className="text-link">View all classes</Link>
@@ -102,18 +103,18 @@ export default function Home() {
               <ClassCard key={classItem.id} classItem={classItem} />
             ))
           ) : (
-            <div className="empty-state">No gym classes are currently scheduled.</div>
+            <div className="empty-state">No activities are scheduled yet.</div>
           )}
         </div>
       </section>
 
       <section className="container cta-section">
         <div>
-          <p className="eyebrow">Ready to move?</p>
-          <h2>Ready for your next workout?</h2>
+          <p className="eyebrow">Have a skill to share?</p>
+          <h2>Become a FitSphere trainer</h2>
         </div>
 
-        <Button to="/classes" variant="primary">Browse Classes</Button>
+        <Button to="/register?role=trainer" variant="primary">Become a Trainer</Button>
       </section>
     </div>
   );

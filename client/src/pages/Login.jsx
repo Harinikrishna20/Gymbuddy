@@ -48,12 +48,14 @@ export default function Login() {
       return;
     }
 
-    navigate(result.user.role === 'admin' ? '/admin' : '/');
+    const dashboardPaths = { learner: '/learner', trainer: '/trainer', admin: '/admin' };
+    navigate(dashboardPaths[result.user.role] || '/learner');
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <p className="eyebrow">FitSphere account</p>
         <h1>Login</h1>
 
         <form onSubmit={handleSubmit} className="auth-form">

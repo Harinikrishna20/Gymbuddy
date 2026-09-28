@@ -1,54 +1,57 @@
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const GymClass = require('../models/GymClass');
 
 const createBooking = async (req, res) => {
+  const { gymClassId } = req.body;
+
+  if (!gymClassId) {
+    return res.status(400).json({ success: false, message: 'gymClassId is required' });
+  }
+
+  const session = await mongoose.startSession();
+  let booking;
+
   try {
-    const { gymClassId } = req.body;
+    await session.withTransaction(async () => {
+      const gymClass = await GymClass.findById(gymClassId).session(session);
+      if (!gymClass) {
+        const error = new Error('Class not found');
+        error.statusCode = 404;
+        throw error;
+      }
 
-    if (!gymClassId) {
-      return res.status(400).json({
-        success: false,
-        message: 'gymClassId is required',
-      });
-    }
+      const activeBooking = await Booking.findOne({
+        gymClass: gymClass._id,
+        bookingStatus: 'confirmed',
+        $or: [{ learner: req.user._id }, { user: req.user._id }],
+      }).session(session);
 
-    const gymClass = await GymClass.findById(gymClassId);
-    if (!gymClass) {
-      return res.status(404).json({
-        success: false,
-        message: 'Class not found',
-      });
-    }
+      if (activeBooking) {
+        const error = new Error('You have already booked this class');
+        error.statusCode = 409;
+        throw error;
+      }
 
-    const activeBooking = await Booking.findOne({
-      user: req.user._id,
-      gymClass: gymClass._id,
-      bookingStatus: 'confirmed',
-    });
+      const bookingCount = await Booking.countDocuments({
+        gymClass: gymClass._id,
+        bookingStatus: 'confirmed',
+      }).session(session);
 
-    if (activeBooking) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already booked this class',
-      });
-    }
+      if (bookingCount >= gymClass.capacity) {
+        const error = new Error('Class is fully booked');
+        error.statusCode = 409;
+        throw error;
+      }
 
-    const bookingCount = await Booking.countDocuments({
-      gymClass: gymClass._id,
-      bookingStatus: 'confirmed',
-    });
-
-    if (bookingCount >= gymClass.capacity) {
-      return res.status(400).json({
-        success: false,
-        message: 'Class is fully booked',
-      });
-    }
-
-    const booking = await Booking.create({
-      user: req.user._id,
-      gymClass: gymClass._id,
-      bookingStatus: 'confirmed',
+      await GymClass.updateOne({ _id: gymClass._id }, { $inc: { bookingRevision: 1 } }, { session });
+      [booking] = await Booking.create([{
+        learner: req.user._id,
+        user: req.user._id,
+        gymClass: gymClass._id,
+        bookingStatus: 'confirmed',
+        bookedAt: new Date(),
+      }], { session });
     });
 
     res.status(201).json({
@@ -57,23 +60,23 @@ const createBooking = async (req, res) => {
       data: booking,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.statusCode || (error.code === 11000 ? 409 : 500)).json({
       success: false,
-      message: 'Unable to create booking',
+      message: error.statusCode || error.code === 11000 ? error.message : 'Unable to create booking',
     });
+  } finally {
+    await session.endSession();
   }
 };
 
 const getMyBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({
-      user: req.user._id,
-    })
+    const bookings = await Booking.find({ $or: [{ learner: req.user._id }, { user: req.user._id }] })
       .populate({
         path: 'gymClass',
-        select: 'title trainer date startTime endTime location category description',
+        select: 'title trainer date startTime endTime location category description capacity trainerId',
       })
-      .sort({ createdAt: -1 });
+      .sort({ bookedAt: -1, createdAt: -1 });
 
     res.json({
       success: true,
@@ -88,25 +91,32 @@ const getMyBookings = async (req, res) => {
 };
 
 const cancelBooking = async (req, res) => {
+  const session = await mongoose.startSession();
+  let booking;
+
   try {
-    const booking = await Booking.findById(req.params.id);
+    await session.withTransaction(async () => {
+      booking = await Booking.findOne({
+        _id: req.params.id,
+        $or: [{ learner: req.user._id }, { user: req.user._id }],
+      }).session(session);
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found',
-      });
-    }
+      if (!booking) {
+        const error = new Error('Booking not found');
+        error.statusCode = 404;
+        throw error;
+      }
 
-    if (booking.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'You cannot cancel someone else\'s booking',
-      });
-    }
-
-    booking.bookingStatus = 'cancelled';
-    await booking.save();
+      if (booking.bookingStatus === 'confirmed') {
+        booking.bookingStatus = 'cancelled';
+        await booking.save({ session });
+        await GymClass.updateOne(
+          { _id: booking.gymClass },
+          { $inc: { bookingRevision: 1 } },
+          { session },
+        );
+      }
+    });
 
     res.json({
       success: true,
@@ -114,16 +124,19 @@ const cancelBooking = async (req, res) => {
       data: booking,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       success: false,
-      message: 'Unable to cancel booking',
+      message: error.statusCode ? error.message : 'Unable to cancel booking',
     });
+  } finally {
+    await session.endSession();
   }
 };
 
 const getAdminBookings = async (req, res) => {
   try {
     const bookings = await Booking.find()
+      .populate({ path: 'learner', select: 'name email' })
       .populate({ path: 'user', select: 'name email' })
       .populate({
         path: 'gymClass',
@@ -133,14 +146,14 @@ const getAdminBookings = async (req, res) => {
 
     const formattedBookings = bookings.map((booking) => ({
       id: booking._id,
-      memberName: booking.user?.name || 'Unknown',
-      email: booking.user?.email || 'Unknown',
+      learnerName: booking.learner?.name || booking.user?.name || 'Unavailable account',
+      email: booking.learner?.email || booking.user?.email || 'Unavailable',
       className: booking.gymClass?.title || 'Class removed',
       trainer: booking.gymClass?.trainer || 'N/A',
       date: booking.gymClass?.date || 'N/A',
       time: booking.gymClass ? `${booking.gymClass.startTime} - ${booking.gymClass.endTime}` : 'N/A',
       status: booking.bookingStatus,
-      bookingDate: booking.createdAt,
+      bookedAt: booking.bookedAt || booking.createdAt,
     }));
 
     res.json({
