@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+client/assets/index-*.css
+client/assets/index-*.js
+.DS_Store
